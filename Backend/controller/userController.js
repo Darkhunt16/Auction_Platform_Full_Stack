@@ -4,7 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 
 export const register = async (req, res, next) => {
   if (!req.files || Object.keys(req.files).length === 0) {
-    return next(new ErrorHandler("Profile Imege Required.", 400));
+    return next(new ErrorHandler("Profile Image Required.", 400));
   }
 
   const { profileImage } = req.files;
@@ -15,10 +15,10 @@ export const register = async (req, res, next) => {
 
   const {
     userName,
-    Password,
     email,
-    address,
+    Password,
     phoneNo,
+    address,
     role,
     bankAccountNumber,
     bankAccountName,
@@ -65,10 +65,10 @@ export const register = async (req, res, next) => {
       "Cloudinary Error:",
       cloudinaryResponse.error || "Unknown cloudinary error."
     );
+    return next(
+      new ErrorHandler("Failed to upload profile image to cloudinary.", 500)
+      );
   }
-  return next(
-    new ErrorHandler("Failed to upload profile image to cloudinary.", 500)
-    );
     
     const user = await User.create({
       userName,
@@ -96,7 +96,7 @@ export const register = async (req, res, next) => {
       },
     });
 
-    res.status(201).json({
+    res.status(200).json({
         success: true,
         message: "User Registered.",
     })
