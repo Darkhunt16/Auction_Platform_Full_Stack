@@ -1,8 +1,10 @@
+import { catchAsyncErrors } from "../middlewares/catchAsyncErrors.js";
 import ErrorHandler from "../middlewares/error.js";
 import { User } from "../models/userSchema.js";
 import { v2 as cloudinary } from "cloudinary";
+import { generateToken } from "../utils/jwtToken.js";
 
-export const register = async (req, res, next) => {
+export const register = catchAsyncErrors(async (req, res, next) => {
   if (!req.files || Object.keys(req.files).length === 0) {
     return next(new ErrorHandler("Profile Image Required.", 400));
   }
@@ -27,14 +29,7 @@ export const register = async (req, res, next) => {
     paypalEmail,
   } = req.body;
 
-  if (
-    !userName ||
-    !email ||
-    !Password ||
-    !address ||
-    !phoneNo ||
-    !role
-  ) {
+  if (!userName || !email || !Password || !address || !phoneNo || !role) {
     return next(new ErrorHandler("Please fill full form.", 400));
   }
   if (role === "Auctioneer") {
@@ -67,37 +62,34 @@ export const register = async (req, res, next) => {
     );
     return next(
       new ErrorHandler("Failed to upload profile image to cloudinary.", 500)
-      );
+    );
   }
-    
-    const user = await User.create({
-      userName,
-      email,
-      Password,
-      phoneNo,
-      address,
-      role,
-      profileImage: {
-        public_id: cloudinaryResponse.public_id,
-        url: cloudinaryResponse.secure_url,
-      },
-      paymentMethods: {
-        bankTransfer: {
-          bankAccountNumber,
-          bankAccountName,
-          bankName,
-        },
-        UPI: {
-          upi_id,
-        },
-        paypal: {
-          paypalEmail,
-        },
-      },
-    });
 
-    res.status(200).json({
-        success: true,
-        message: "User Registered.",
-    })
-};
+  const user = await User.create({
+    userName,
+    email,
+    Password,
+    phoneNo,
+    address,
+    role,
+    profileImage: {
+      public_id: cloudinaryResponse.public_id,
+      url: cloudinaryResponse.secure_url,
+    },
+    paymentMethods: {
+      bankTransfer: {
+        bankAccountNumber,
+        bankAccountName,
+        bankName,
+      },
+      UPI: {
+        upi_id,
+      },
+      paypal: {
+        paypalEmail,
+      },
+    },
+  });
+
+  generateToken(user, "User Registered.", 201, res);
+});
